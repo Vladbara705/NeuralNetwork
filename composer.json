@@ -1,0 +1,10 @@
+{
+    "name": "vlad/www",
+    "authors": [
+        {
+            "name": "Влад Чудинов",
+            "email": "vladbara705@gmail.com"
+        }
+    ],
+    "require": {}
+}
