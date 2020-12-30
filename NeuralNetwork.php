@@ -1,6 +1,14 @@
 <?php
 
+require __DIR__ . '/vendor/autoload.php';
 
+use exceptions\ParameterNotFoundException;
+
+/**
+ * Class NeuralNetwork
+ * @author vlad <vladbara705@gmail.com>
+ * @package network
+ */
 class NeuralNetwork
 {
     /**
@@ -17,33 +25,40 @@ class NeuralNetwork
     }
 
     /**
-     * @param $param
+     * @param $parameter
      * @return false
      */
-    private function getParam($param)
+    private function getParameter($parameter)
     {
-        if (!isset($param)) return false;
+        if (!isset($parameter)) return false;
         foreach ($this->settings as $setting) {
             preg_match('/^\S+/', $setting, $settingName);
-            if ($param == $settingName[0]) {
+            if ($parameter == $settingName[0]) {
                 preg_match('/\s([0-9]?(\S[0-9])|[0-9])/', $setting, $result);
-                return  $result[1];
+                return $result[1];
             }
         }
         return false;
     }
 
+    /**
+     * @param array $input
+     * @param array $output
+     * @return false
+     */
     public function execute($input = [], $output = [])
     {
         if (empty($input)) return false;
         $inputParametersCount = count($input);
-        $hiddenNeuronsCount = $this->getParam('HIDDEN_NEURONS');
+        $hiddenNeuronsCount = $this->getParameter('HIDDEN_NEURONS');
+        if (empty($hiddenNeuronsCount)) throw new ParameterNotFoundException();
 
         $synapse = 0;
         $hiddenNeurons = [];
         for ($i = 0; $i <= $inputParametersCount - 1; $i++) {
             for ($b = 0; $b <= $hiddenNeuronsCount - 1; $b++) {
-                $weight = $this->getParam('WEIGHT_' . $synapse);
+                $weight = $this->getParameter('WEIGHT_' . $synapse);
+                if (empty($weight)) throw new ParameterNotFoundException();
                 $synapse++;
                 $hiddenNeurons[$b] += $input[$i] * $weight;
             }
