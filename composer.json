@@ -10,7 +10,8 @@
     "autoload": {
         "psr-4": {
             "exceptions\\": "exceptions/",
-            "helpers\\": "helpers/"
+            "helpers\\": "helpers/",
+            "network\\": "network/"
         }
     }
 }

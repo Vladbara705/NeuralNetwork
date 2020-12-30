@@ -10,11 +10,21 @@ namespace helpers;
 class Config
 {
     /**
+     * @var array|false
+     */
+    private $settings;
+    /**
+     * @var string
+     */
+    private $rootDir;
+
+    /**
      * Config constructor.
      */
     public function __construct()
     {
-        $this->settings = file('settings.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $this->rootDir = dirname(__DIR__);
+        $this->settings = file($this->rootDir . '/config/settings.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     }
 
     /**
@@ -31,7 +41,7 @@ class Config
      */
     private function setParameter($parameter)
     {
-        file_put_contents('settings.txt', $parameter  . PHP_EOL, FILE_APPEND);
+        file_put_contents($this->rootDir . '/config/settings.txt', $parameter  . PHP_EOL, FILE_APPEND);
         return true;
     }
 

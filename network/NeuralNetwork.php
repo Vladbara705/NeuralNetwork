@@ -1,6 +1,6 @@
 <?php
 
-require __DIR__ . '/vendor/autoload.php';
+namespace network;
 
 use exceptions\ParameterNotFoundException;
 use helpers\Config;
@@ -207,6 +207,3 @@ class NeuralNetwork
         return $result;
     }
 }
-
-$network = new NeuralNetwork();
-var_dump($network->execute([0,1], []));
