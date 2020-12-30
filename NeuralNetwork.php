@@ -3,6 +3,7 @@
 require __DIR__ . '/vendor/autoload.php';
 
 use exceptions\ParameterNotFoundException;
+use helpers\Config;
 
 /**
  * Class NeuralNetwork
@@ -14,31 +15,140 @@ class NeuralNetwork
     /**
      * @var array|false
      */
-    private $settings;
+    private $config;
+    /**
+     * @var int
+     */
+    private $synapse;
 
     /**
      * NeuralNetwork constructor.
      */
     public function __construct()
     {
-        $this->settings = file('settings.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $this->config = new Config();
+        $this->synapse = 0;
+    }
+
+    private function resetSynapseCounter()
+    {
+        $this->synapse = 0;
     }
 
     /**
-     * @param $parameter
-     * @return false
+     * @param $hiddenNeurons
+     * @param $input
+     * @param $iteration
+     * @param $isBias
+     * @return mixed
      */
-    private function getParameter($parameter)
+    private function calculateFirstHiddenLayer($hiddenNeurons, $isBias, $input = [])
     {
-        if (!isset($parameter)) return false;
-        foreach ($this->settings as $setting) {
-            preg_match('/^\S+/', $setting, $settingName);
-            if ($parameter == $settingName[0]) {
-                preg_match('/\s([0-9]?(\S[0-9])|[0-9])/', $setting, $result);
-                return $result[1];
+        $hiddenNeuronsCount = $this->config->getParameter('HIDDEN_NEURONS_LAYER_1');
+        if (empty($hiddenNeuronsCount)) throw new ParameterNotFoundException();
+
+        for ($b = 0; $b <= $hiddenNeuronsCount - 1; $b++) {
+            if ($isBias) {
+                $bias = $this->config->getParameter('BIAS');
+                $weight = $this->config->getParameter('WEIGHT_BIAS_1_HIDDEN_LAYER_' . $this->synapse);
+                if (empty($weight) || empty($bias)) throw new ParameterNotFoundException();
+                $hiddenNeurons[$b] += $bias * $weight;
+            } else {
+                $weight = $this->config->getParameter('WEIGHT_1_HIDDEN_LAYER_' . $this->synapse);
+                if (empty($weight)) throw new ParameterNotFoundException();
+                if (isset($hiddenNeurons[$b])) {
+                    $hiddenNeurons[$b] += $input * $weight;
+                } else {
+                    $hiddenNeurons[$b] = $input * $weight;
+                }
+            }
+            $this->synapse++;
+        }
+        return $hiddenNeurons;
+    }
+
+    /**
+     * @param $layer
+     * @param $hiddenNeurons
+     * @param $isBias
+     * @return mixed
+     */
+    private function calculateNextHiddenLayer($layer, $hiddenNeurons, $isBias)
+    {
+        $prevIterationNeurons = $hiddenNeurons;
+        unset($hiddenNeurons);
+        $hiddenNeurons = [];
+
+        if ($isBias) {
+            $bias = $this->config->getParameter('BIAS');
+            foreach ($prevIterationNeurons as $key => $neuron) {
+                $weight = $this->config->getParameter('WEIGHT_BIAS_' . $layer . '_HIDDEN_LAYER_' . $this->synapse);
+                $hiddenNeurons[] = $neuron + $bias * $weight;
+                $this->synapse++;
+            }
+        } else {
+            $hiddenNeuronsCount = $this->config->getParameter('HIDDEN_NEURONS_LAYER_' . $layer);
+            if (empty($hiddenNeuronsCount)) throw new ParameterNotFoundException();
+
+            foreach ($prevIterationNeurons as $key => $neuron) {
+                for ($b = 0; $b <= $hiddenNeuronsCount - 1; $b++) {
+                    $weight = $this->config->getParameter('WEIGHT_' . $layer . '_HIDDEN_LAYER_' . $this->synapse);
+                    if (empty($weight)) throw new ParameterNotFoundException();
+                    if (isset($hiddenNeurons[$b])) {
+                        $hiddenNeurons[$b] += $neuron * $weight;
+                    } else {
+                        $hiddenNeurons[$b] = $neuron * $weight;
+                    }
+                    $this->synapse++;
+                }
             }
         }
-        return false;
+        return $hiddenNeurons;
+    }
+
+    /**
+     * @param $outputNeurons
+     * @param $isBias
+     * @param null $hiddenNeuron
+     * @return mixed
+     */
+    private function calculateOutputLayer($outputNeurons, $isBias, $hiddenNeuron = null)
+    {
+        $outputNeuronsCount = $this->config->getParameter('OUTPUT_NEURONS');
+        if (empty($outputNeuronsCount)) throw new ParameterNotFoundException();
+
+        if ($isBias) {
+            $bias = $this->config->getParameter('BIAS');
+            foreach ($outputNeurons as $key => $outputNeuron) {
+                $weight = $this->config->getParameter('WEIGHT_BIAS_OUTPUT_' . $this->synapse);
+                $outputNeurons[$key] = $outputNeuron + $bias * $weight;
+                $this->synapse++;
+            }
+        } else {
+            for ($b = 0; $b <= $outputNeuronsCount - 1; $b++) {
+                $weight = $this->config->getParameter('WEIGHT_OUTPUT_' . $this->synapse);
+                if (isset($outputNeurons[$b])) {
+                    $outputNeurons[$b] += $hiddenNeuron * $weight;
+                } else {
+                    $outputNeurons[$b] = $hiddenNeuron * $weight;
+                }
+                $this->synapse++;
+            }
+        }
+
+        return $outputNeurons;
+    }
+
+    /**
+     * @param $neurons
+     * @return mixed
+     */
+    private function sigmoid($neurons)
+    {
+        foreach ($neurons as $key => $neuron) {
+            $neurons[$key] = 1 / (1 + exp(-$neuron));
+        }
+        return $neurons;
     }
 
     /**
@@ -50,23 +160,53 @@ class NeuralNetwork
     {
         if (empty($input)) return false;
         $inputParametersCount = count($input);
-        $hiddenNeuronsCount = $this->getParameter('HIDDEN_NEURONS');
-        if (empty($hiddenNeuronsCount)) throw new ParameterNotFoundException();
+        $hiddenNeuronsLayersCount = $this->config->getParameter('HIDDEN_LAYERS');
+        if (empty($hiddenNeuronsLayersCount)) throw new ParameterNotFoundException();
 
-        $synapse = 0;
+        /*************************************
+         * Input layers - first hidden layer
+         *************************************/
         $hiddenNeurons = [];
         for ($i = 0; $i <= $inputParametersCount - 1; $i++) {
-            for ($b = 0; $b <= $hiddenNeuronsCount - 1; $b++) {
-                $weight = $this->getParameter('WEIGHT_' . $synapse);
-                if (empty($weight)) throw new ParameterNotFoundException();
-                $synapse++;
-                $hiddenNeurons[$b] += $input[$i] * $weight;
-            }
+            $hiddenNeurons = $this->calculateFirstHiddenLayer($hiddenNeurons, false, $input[$i]);
         }
 
-        $test = '';
+        // First hidden layer with bias
+        $this->resetSynapseCounter();
+        $hiddenNeurons = $this->calculateFirstHiddenLayer($hiddenNeurons,true);
+        $hiddenNeurons = $this->sigmoid($hiddenNeurons);
+
+        /*************************************
+         * Next hidden layers
+         *************************************/
+        for ($i = 1; $i < $hiddenNeuronsLayersCount;) {
+            $i++;
+            $this->resetSynapseCounter();
+            $hiddenNeurons = $this->calculateNextHiddenLayer($i, $hiddenNeurons, false);
+
+            // Hidden layer with bias
+            $this->resetSynapseCounter();
+            $hiddenNeurons = $this->calculateNextHiddenLayer($i, $hiddenNeurons,true);
+            $hiddenNeurons = $this->sigmoid($hiddenNeurons);
+        }
+
+        /*************************************
+         * Output layer
+         *************************************/
+        $outputNeurons = [];
+        $this->resetSynapseCounter();
+        foreach ($hiddenNeurons as $hiddenNeuron) {
+            $outputNeurons = $this->calculateOutputLayer($outputNeurons, false, $hiddenNeuron);
+        }
+
+        // Output layer with bias
+        $this->resetSynapseCounter();
+        $outputNeurons = $this->calculateOutputLayer($outputNeurons, true);
+        $result = $this->sigmoid($outputNeurons);
+
+        return $result;
     }
 }
 
-$test = new NeuralNetwork();
-$test->execute([1,1], []);
+$network = new NeuralNetwork();
+var_dump($network->execute([0,1], []));
