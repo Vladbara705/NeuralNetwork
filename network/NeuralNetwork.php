@@ -38,7 +38,6 @@ class NeuralNetwork
     /**
      * @param $hiddenNeurons
      * @param $input
-     * @param $iteration
      * @param $isBias
      * @return mixed
      */
@@ -146,17 +145,17 @@ class NeuralNetwork
     private function sigmoid($neurons)
     {
         foreach ($neurons as $key => $neuron) {
-            $neurons[$key] = 1 / (1 + exp(-$neuron));
+            $neurons[$key] = round(1 / (1 + exp(-$neuron)), 2);
         }
         return $neurons;
     }
 
     /**
      * @param array $input
-     * @param array $output
-     * @return false
+     * @param bool $withBias
+     * @return bool|mixed
      */
-    public function execute($input = [], $output = [])
+    public function execute($input = [], $withBias = true)
     {
         if (empty($input)) return false;
         $inputParametersCount = count($input);
@@ -173,7 +172,9 @@ class NeuralNetwork
 
         // First hidden layer with bias
         $this->resetSynapseCounter();
-        $hiddenNeurons = $this->calculateFirstHiddenLayer($hiddenNeurons,true);
+        if ($withBias) {
+            $hiddenNeurons = $this->calculateFirstHiddenLayer($hiddenNeurons,true);
+        }
         $hiddenNeurons = $this->sigmoid($hiddenNeurons);
 
         /*************************************
@@ -186,7 +187,9 @@ class NeuralNetwork
 
             // Hidden layer with bias
             $this->resetSynapseCounter();
-            $hiddenNeurons = $this->calculateNextHiddenLayer($i, $hiddenNeurons,true);
+            if ($withBias) {
+                $hiddenNeurons = $this->calculateNextHiddenLayer($i, $hiddenNeurons,true);
+            }
             $hiddenNeurons = $this->sigmoid($hiddenNeurons);
         }
 
@@ -201,7 +204,9 @@ class NeuralNetwork
 
         // Output layer with bias
         $this->resetSynapseCounter();
-        $outputNeurons = $this->calculateOutputLayer($outputNeurons, true);
+        if ($withBias) {
+            $outputNeurons = $this->calculateOutputLayer($outputNeurons, true);
+        }
         $result = $this->sigmoid($outputNeurons);
 
         return $result;
