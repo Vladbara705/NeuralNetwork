@@ -39,7 +39,7 @@ class Config
      * @param $parameter
      * @return bool
      */
-    private function setParameter($parameter)
+    private function addParameter($parameter)
     {
         file_put_contents($this->rootDir . '/config/settings.txt', $parameter  . PHP_EOL, FILE_APPEND);
         return true;
@@ -47,9 +47,40 @@ class Config
 
     /**
      * @param $parameter
+     * @param $value
+     * @return bool
+     */
+    public function setParameter($parameter, $value)
+    {
+        $this->settings = file($this->rootDir . '/config/settings.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+        $settingExist = false;
+        foreach ($this->settings as $key => $setting) {
+            preg_match('/^\S+/', $setting, $settingName);
+            if ($parameter == $settingName[0]) {
+                $settingExist = true;
+                unset($this->settings[$key]);
+                $this->settings[$key] = $parameter . ' = ' . $value . PHP_EOL;
+            } else {
+                $this->settings[$key] = $setting . PHP_EOL;
+            }
+        }
+
+        if ($settingExist) {
+            file_put_contents($this->rootDir . '/config/settings.txt', $this->settings);
+            return true;
+        }
+
+        $this->addParameter($parameter . ' = ' . $value);
+        return true;
+    }
+
+    /**
+     * @param $parameter
+     * @param bool $withCreated
      * @return false
      */
-    public function getParameter($parameter)
+    public function getParameter($parameter, $withCreated = true)
     {
         if (!isset($parameter)) return false;
         $result = [];
@@ -57,13 +88,13 @@ class Config
         foreach ($this->settings as $setting) {
             preg_match('/^\S+/', $setting, $settingName);
             if ($parameter == $settingName[0]) {
-                preg_match('/\s([0-9]?(\S[0-9])|[0-9])/', $setting, $result);
+                preg_match('/=\s(.*)/', $setting, $result);
             }
         }
 
-        if (empty($result) || empty($result[1])) {
+        if (!empty($withCreated) && (empty($result) || empty($result[1]))) {
             $value = $this->getRandomValue();
-            $this->setParameter($parameter . ' = ' . $value);
+            $this->addParameter($parameter . ' = ' . $value);
             return $value;
         }
 

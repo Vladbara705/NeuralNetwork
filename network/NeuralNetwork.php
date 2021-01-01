@@ -20,14 +20,20 @@ class NeuralNetwork
      * @var int
      */
     private $synapse;
+    /**
+     * @var false|mixed
+     */
+    public $debug;
 
     /**
      * NeuralNetwork constructor.
+     * @param bool $debug
      */
-    public function __construct()
+    public function __construct($debug = false)
     {
         $this->config = new Config();
         $this->synapse = 0;
+        $this->debug = $debug;
     }
 
     private function resetSynapseCounter()
@@ -176,6 +182,7 @@ class NeuralNetwork
             $hiddenNeurons = $this->calculateFirstHiddenLayer($hiddenNeurons,true);
         }
         $hiddenNeurons = $this->sigmoid($hiddenNeurons);
+        $intermediateCoefficients[] = $hiddenNeurons;
 
         /*************************************
          * Next hidden layers
@@ -191,6 +198,7 @@ class NeuralNetwork
                 $hiddenNeurons = $this->calculateNextHiddenLayer($i, $hiddenNeurons,true);
             }
             $hiddenNeurons = $this->sigmoid($hiddenNeurons);
+            $intermediateCoefficients[] = $hiddenNeurons;
         }
 
         /*************************************
@@ -207,8 +215,15 @@ class NeuralNetwork
         if ($withBias) {
             $outputNeurons = $this->calculateOutputLayer($outputNeurons, true);
         }
-        $result = $this->sigmoid($outputNeurons);
+        $outputNeurons = $this->sigmoid($outputNeurons);
 
-        return $result;
+        if ($this->debug) {
+            return [
+                'result' => $outputNeurons,
+                'intermediateCoefficients' => array_reverse($intermediateCoefficients, true)
+            ];
+        }
+
+        return $outputNeurons;
     }
 }
