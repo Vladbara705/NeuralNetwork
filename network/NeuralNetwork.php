@@ -152,24 +152,24 @@ class NeuralNetwork
     }
 
     /**
-     * @param array $input
-     * @param array $outIdeal
+     * @param array $data
+     * @param array $ideal
      * @param bool $withBias
      * @return bool|mixed
      */
-    public function execute($input = [], $withBias = true, $outIdeal = [])
+    public function execute($data = [], $withBias = true, $ideal = [])
     {
-        if (empty($input)) return false;
-        $inputParametersCount = count($input);
-        $hiddenNeuronsLayersCount = Config::getParameter('HIDDEN_LAYERS');
-        if (empty($hiddenNeuronsLayersCount)) throw new ParameterNotFoundException();
+        if (empty($data)) return false;
+        $inputParametersCount = count($data);
+        $hiddenLayersCount = Config::getParameter('HIDDEN_LAYERS');
+        if (empty($hiddenLayersCount)) throw new ParameterNotFoundException();
 
         /*************************************
          * Input layers - first hidden layer
          *************************************/
         $hiddenNeurons = [];
         for ($i = 0; $i <= $inputParametersCount - 1; $i++) {
-            $hiddenNeurons = $this->calculateFirstHiddenLayer($hiddenNeurons, false, $input[$i]);
+            $hiddenNeurons = $this->calculateFirstHiddenLayer($hiddenNeurons, false, $data[$i]);
         }
 
         // First hidden layer with bias
@@ -183,7 +183,7 @@ class NeuralNetwork
         /*************************************
          * Next hidden layers
          *************************************/
-        for ($i = 1; $i < $hiddenNeuronsLayersCount;) {
+        for ($i = 1; $i < $hiddenLayersCount;) {
             $i++;
             $this->resetSynapseCounter();
             $hiddenNeurons = $this->calculateNextHiddenLayer($i, $hiddenNeurons, false);
@@ -216,7 +216,7 @@ class NeuralNetwork
         if ($this->debug) {
             return [
                 'result' => $outputNeurons,
-                'outIdeal' => $outIdeal,
+                'ideal' => $ideal,
                 'intermediateCoefficients' => array_reverse($intermediateCoefficients)
             ];
         }
