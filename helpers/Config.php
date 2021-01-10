@@ -10,27 +10,9 @@ namespace helpers;
 class Config
 {
     /**
-     * @var array|false
-     */
-    private $settings;
-    /**
-     * @var string
-     */
-    private $rootDir;
-
-    /**
-     * Config constructor.
-     */
-    public function __construct()
-    {
-        $this->rootDir = dirname(__DIR__);
-        $this->settings = file($this->rootDir . '/config/settings.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    }
-
-    /**
      * @return float|int
      */
-    private function getRandomValue()
+    private static function getRandomValue()
     {
         return rand(1, 9) / 10;
     }
@@ -39,9 +21,9 @@ class Config
      * @param $parameter
      * @return bool
      */
-    private function addParameter($parameter)
+    private static function addParameter($parameter)
     {
-        file_put_contents($this->rootDir . '/config/settings.txt', $parameter  . PHP_EOL, FILE_APPEND);
+        file_put_contents(dirname(__DIR__) . '/config/settings.txt', $parameter  . PHP_EOL, FILE_APPEND);
         return true;
     }
 
@@ -50,28 +32,28 @@ class Config
      * @param $value
      * @return bool
      */
-    public function setParameter($parameter, $value)
+    public static function setParameter($parameter, $value)
     {
-        $settings = file($this->rootDir . '/config/settings.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $settings = file(dirname(__DIR__) . '/config/settings.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         $settingExist = false;
 
         foreach ($settings as $key => $setting) {
             preg_match('/^\S+/', $setting, $settingName);
             if ($parameter == $settingName[0]) {
                 $settingExist = true;
-                unset($this->settings[$key]);
-                $this->settings[$key] = $parameter . ' = ' . $value . PHP_EOL;
+                unset($settings[$key]);
+                $settings[$key] = $parameter . ' = ' . $value . PHP_EOL;
             } else {
-                $this->settings[$key] = $setting . PHP_EOL;
+                $settings[$key] = $setting . PHP_EOL;
             }
         }
 
         if ($settingExist) {
-            file_put_contents($this->rootDir . '/config/settings.txt', $this->settings);
+            file_put_contents(dirname(__DIR__) . '/config/settings.txt', $settings);
             return true;
         }
 
-        $this->addParameter($parameter . ' = ' . $value);
+        self::addParameter($parameter . ' = ' . $value);
         return true;
     }
 
@@ -80,12 +62,12 @@ class Config
      * @param bool $withCreated
      * @return false
      */
-    public function getParameter($parameter, $withCreated = true)
+    public static function getParameter($parameter, $withCreated = true)
     {
         if (!isset($parameter)) return false;
-        $result = [];
 
-        $settings = file($this->rootDir . '/config/settings.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $result = [];
+        $settings = file(dirname(__DIR__) . '/config/settings.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($settings as $setting) {
             preg_match('/^\S+/', $setting, $settingName);
             if ($parameter == $settingName[0]) {
@@ -94,8 +76,8 @@ class Config
         }
 
         if (!empty($withCreated) && (empty($result) || empty($result[1]))) {
-            $value = $this->getRandomValue();
-            $this->addParameter($parameter . ' = ' . $value);
+            $value = self::getRandomValue();
+            self::addParameter($parameter . ' = ' . $value);
             return $value;
         }
 

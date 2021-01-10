@@ -1,11 +1,5 @@
 <?php
 
-$old_error_handler = set_error_handler("myErrorHandler");
-
-function myErrorHandler($errno, $errstr, $errfile, $errline)
-{
-    $test = '';
-}
 require __DIR__ . '/vendor/autoload.php';
 
 use helpers\Config;
@@ -17,8 +11,8 @@ use network\NeuralNetwork;
  */
 class TrainNetwork
 {
-    const SPEED_TRAIN = 0.2;
-    const MOMENT_TRAIN = 0.2;
+    const SPEED_TRAIN = 0.1;
+    const MOMENT_TRAIN = 0.1;
 
     /**
      * @var NeuralNetwork
@@ -114,12 +108,12 @@ class TrainNetwork
      */
 //    private function updateWeightOnOutputLayer($results, $neuron)
 //    {
-//        $outputNeuronsCount = $this->config->getParameter('OUTPUT_NEURONS', false);
+//        $outputNeuronsCount = Config::getParameter('OUTPUT_NEURONS', false);
 //        $weights = [];
 //        $deltaOutputs = [];
 //
 //        for ($i = 0; $i <= $outputNeuronsCount - 1; $i++) {
-//            $weight = $this->config->getParameter('WEIGHT_OUTPUT_' . $this->weightNumber, false);
+//            $weight = Config::getParameter('WEIGHT_OUTPUT_' . $this->weightNumber, false);
 //            $weights[] = $weight;
 //            $this->weightNumber++;
 //        }
@@ -128,13 +122,13 @@ class TrainNetwork
 //            $deltaOutput = $this->getDeltaOutput($results['outIdeal'][$i], $results['result'][$i]);
 //            $deltaOutputs[] = $deltaOutput;
 //            $grad = $deltaOutput * $results['intermediateCoefficients'][0][$neuron];
-//            $prevWeight = $this->config->getParameter('PREV_WEIGHT_OUTPUT_' . $this->weightNumber2, false);
-//            $weight = $this->config->getParameter('WEIGHT_OUTPUT_' . $this->weightNumber2, false);
+//            $prevWeight = Config::getParameter('PREV_WEIGHT_OUTPUT_' . $this->weightNumber2, false);
+//            $weight = Config::getParameter('WEIGHT_OUTPUT_' . $this->weightNumber2, false);
 //            $momentTrain = $prevWeight ? self::MOMENT_TRAIN * $prevWeight : 0;
 //            $deltaWeight = self::SPEED_TRAIN * $grad + $momentTrain;
 //            $newWeight = $weight + $deltaWeight;
-//            $this->config->setParameter('WEIGHT_OUTPUT_' . $this->weightNumber, $newWeight);
-//            $this->config->setParameter('PREV_WEIGHT_OUTPUT_' . $this->weightNumber, $deltaWeight);
+//            Config::setParameter('WEIGHT_OUTPUT_' . $this->weightNumber, $newWeight);
+//            Config::setParameter('PREV_WEIGHT_OUTPUT_' . $this->weightNumber, $deltaWeight);
 //            $this->weightNumber2++;
 //        }
 //
@@ -143,23 +137,23 @@ class TrainNetwork
 
     private function updateWeightOnOutputLayer($results, $neuron)
     {
-        $outputNeuronsCount = $this->config->getParameter('OUTPUT_NEURONS', false);
+        $outputNeuronsCount = Config::getParameter('OUTPUT_NEURONS', false);
         $weights = [];
         $deltaOutputs = [];
 
         for ($i = 0; $i <= $outputNeuronsCount - 1; $i++) {
-            $weight = $this->config->getParameter('WEIGHT_OUTPUT_' . $this->weightNumber, false);
+            $weight = Config::getParameter('WEIGHT_OUTPUT_' . $this->weightNumber, false);
             $weights[] = $weight;
             $deltaOutput = $this->getDeltaOutput($results['outIdeal'][$i], $results['result'][$i]);
             $deltaOutputs[] = $deltaOutput;
 
             $grad = $deltaOutput * $results['intermediateCoefficients'][0][$neuron];
-            $prevWeight = $this->config->getParameter('PREV_WEIGHT_OUTPUT_' . $this->weightNumber, false);
+            $prevWeight = Config::getParameter('PREV_WEIGHT_OUTPUT_' . $this->weightNumber, false);
             $momentTrain = $prevWeight ? self::MOMENT_TRAIN * $prevWeight : 0;
             $deltaWeight = self::SPEED_TRAIN * $grad + $momentTrain;
             $newWeight = $weight + $deltaWeight;
-            $this->config->setParameter('WEIGHT_OUTPUT_' . $this->weightNumber, $newWeight);
-            $this->config->setParameter('PREV_WEIGHT_OUTPUT_' . $this->weightNumber, $deltaWeight);
+            Config::setParameter('WEIGHT_OUTPUT_' . $this->weightNumber, $newWeight);
+            Config::setParameter('PREV_WEIGHT_OUTPUT_' . $this->weightNumber, $deltaWeight);
             $this->weightNumber++;
         }
 
@@ -184,10 +178,10 @@ class TrainNetwork
             $i++;
         }
 
-        $hiddenNeuronsCount = $this->config->getParameter('HIDDEN_NEURONS_LAYER_' . $nextLayer, false);
+        $hiddenNeuronsCount = Config::getParameter('HIDDEN_NEURONS_LAYER_' . $nextLayer, false);
         $weights = [];
         for ($i = 0; $i <= $hiddenNeuronsCount - 1; $i++) {
-            $weight = $this->config->getParameter('WEIGHT_' . $nextLayer . '_HIDDEN_LAYER_' . $this->weightNumber, false);
+            $weight = Config::getParameter('WEIGHT_' . $nextLayer . '_HIDDEN_LAYER_' . $this->weightNumber, false);
             $weights[] = $weight;
             $this->weightNumber++;
         }
@@ -195,13 +189,13 @@ class TrainNetwork
         $grad = $deltaNeuron * $intermediateCoefficients[$currentLayer][$neuron];
 
         for ($i = 0; $i <= $hiddenNeuronsCount - 1; $i++) {
-            $prevWeight = $this->config->getParameter('PREV_WEIGHT_' . $nextLayer . '_HIDDEN_LAYER_' . $this->weightNumber2, false);
-            $weight = $this->config->getParameter('WEIGHT_' . $nextLayer . '_HIDDEN_LAYER_' . $this->weightNumber2, false);
+            $prevWeight = Config::getParameter('PREV_WEIGHT_' . $nextLayer . '_HIDDEN_LAYER_' . $this->weightNumber2, false);
+            $weight = Config::getParameter('WEIGHT_' . $nextLayer . '_HIDDEN_LAYER_' . $this->weightNumber2, false);
             $momentTrain = $prevWeight ? self::MOMENT_TRAIN * $prevWeight : 0;
             $deltaWeight = self::SPEED_TRAIN * $grad + $momentTrain;
             $newWeight = $weight + $deltaWeight;
-            $this->config->setParameter('PREV_WEIGHT_' . $nextLayer . '_HIDDEN_LAYER_' . $this->weightNumber2, $deltaWeight);
-            $this->config->setParameter('WEIGHT_' . $nextLayer . '_HIDDEN_LAYER_' . $this->weightNumber2, $newWeight);
+            Config::setParameter('PREV_WEIGHT_' . $nextLayer . '_HIDDEN_LAYER_' . $this->weightNumber2, $deltaWeight);
+            Config::setParameter('WEIGHT_' . $nextLayer . '_HIDDEN_LAYER_' . $this->weightNumber2, $newWeight);
             $this->weightNumber2++;
         }
 
@@ -213,18 +207,18 @@ class TrainNetwork
      * @param $outIdeal
      * @param $withBias
      */
-    public function execute($input, $outIdeal, $withBias)
+    public function execute($input, $withBias, $outIdeal)
     {
-        $results = $this->neuralNetwork->execute($input, $outIdeal, $withBias);
+        $results = $this->neuralNetwork->execute($input, $withBias, $outIdeal);
 
         echo ('Ожидаемый ответ:' . $outIdeal[0] . PHP_EOL);
         echo ('Полученный ответ:' . $results['result'][0] . PHP_EOL);
         echo('Ошибка:' . $this->getErrorPercent($outIdeal[0], $results['result'][0]) . PHP_EOL);
 
-        $hiddenLayersCount = $this->config->getParameter('HIDDEN_LAYERS', false);
+        $hiddenLayersCount = Config::getParameter('HIDDEN_LAYERS', false);
         $deltaHiddenNeurons = [];
         for ($layer = $hiddenLayersCount; $layer >= 1; $layer--) {
-            $hiddenNeuronsCount = $this->config->getParameter('HIDDEN_NEURONS_LAYER_' . $layer, false);
+            $hiddenNeuronsCount = Config::getParameter('HIDDEN_NEURONS_LAYER_' . $layer, false);
             $this->resetWeightNumberCounter();
             $this->weightNumber2 = 0;
             for ($neuron = 0; $neuron <= $hiddenNeuronsCount - 1; $neuron++) {
@@ -253,14 +247,14 @@ class TrainNetwork
         for ($i = 0; $i <= count($input) - 1; $i++) {
             isset($deltaIntermediateNeurons) ? $deltaHiddenNeurons = $deltaIntermediateNeurons[0] : false;
             foreach ($deltaHiddenNeurons as $deltaNeuron) {
-                $weight = $this->config->getParameter('WEIGHT_1_HIDDEN_LAYER_' . $b, false);
+                $weight = Config::getParameter('WEIGHT_1_HIDDEN_LAYER_' . $b, false);
                 $grad = $input[$i] *  $deltaNeuron;
-                $prevWeight = $this->config->getParameter('PREV_1_HIDDEN_LAYER_' . $b, false);
+                $prevWeight = Config::getParameter('PREV_1_HIDDEN_LAYER_' . $b, false);
                 $momentTrain = $prevWeight ? self::MOMENT_TRAIN * $prevWeight : 0;
                 $deltaWeight = self::SPEED_TRAIN * $grad + $momentTrain;
                 $newWeight = $weight + $deltaWeight;
-                $this->config->setParameter('WEIGHT_1_HIDDEN_LAYER_' . $b, $newWeight);
-                $this->config->setParameter('PREV_1_HIDDEN_LAYER_' . $b, $deltaWeight);
+                Config::setParameter('WEIGHT_1_HIDDEN_LAYER_' . $b, $newWeight);
+                Config::setParameter('PREV_1_HIDDEN_LAYER_' . $b, $deltaWeight);
                 $b++;
             }
         }
@@ -277,7 +271,7 @@ class TrainNetwork
         $epoch = 3000;
         for ($i = 0; $i <= $epoch; $i++) {
             foreach ($data as $value) {
-                $this->execute($value[0], $value[1], false);
+                $this->execute($value[0], false, $value[1]);
             }
         }
 
@@ -305,7 +299,7 @@ class TrainNetwork
 //
 //                    //var_dump($data[0]);
 //                    //var_dump($this->normalizeData($data[0]));
-//                    $this->execute($this->normalizeData($data[0]), $data[1], false);
+//                    $this->execute($this->normalizeData($data[0]), false, $data[1]);
 //                }
 //            }
 //        }
