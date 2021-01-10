@@ -52,10 +52,10 @@ class Config
      */
     public function setParameter($parameter, $value)
     {
-        $this->settings = file($this->rootDir . '/config/settings.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-
+        $settings = file($this->rootDir . '/config/settings.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         $settingExist = false;
-        foreach ($this->settings as $key => $setting) {
+
+        foreach ($settings as $key => $setting) {
             preg_match('/^\S+/', $setting, $settingName);
             if ($parameter == $settingName[0]) {
                 $settingExist = true;
@@ -85,7 +85,8 @@ class Config
         if (!isset($parameter)) return false;
         $result = [];
 
-        foreach ($this->settings as $setting) {
+        $settings = file($this->rootDir . '/config/settings.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($settings as $setting) {
             preg_match('/^\S+/', $setting, $settingName);
             if ($parameter == $settingName[0]) {
                 preg_match('/=\s(.*)/', $setting, $result);
@@ -98,6 +99,6 @@ class Config
             return $value;
         }
 
-        return $result[1];
+        return (!empty($result) && isset($result[1])) ? $result[1] : null;
     }
 }

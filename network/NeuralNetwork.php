@@ -151,17 +151,18 @@ class NeuralNetwork
     private function sigmoid($neurons)
     {
         foreach ($neurons as $key => $neuron) {
-            $neurons[$key] = round(1 / (1 + exp(-$neuron)), 2);
+            $neurons[$key] = 1 / (1 + exp(-$neuron));
         }
         return $neurons;
     }
 
     /**
      * @param array $input
+     * @param array $outIdeal
      * @param bool $withBias
      * @return bool|mixed
      */
-    public function execute($input = [], $withBias = true)
+    public function execute($input = [], $outIdeal = [], $withBias = true)
     {
         if (empty($input)) return false;
         $inputParametersCount = count($input);
@@ -220,7 +221,8 @@ class NeuralNetwork
         if ($this->debug) {
             return [
                 'result' => $outputNeurons,
-                'intermediateCoefficients' => array_reverse($intermediateCoefficients, true)
+                'outIdeal' => $outIdeal,
+                'intermediateCoefficients' => array_reverse($intermediateCoefficients)
             ];
         }
 
